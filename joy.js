@@ -63,12 +63,17 @@ let StickStatus =
  *  title {String} (optional) - The ID of canvas (Default value is 'joystick')
  *  width {Int} (optional) - The width of canvas, if not specified is setted at width of container object (Default value is the width of container object)
  *  height {Int} (optional) - The height of canvas, if not specified is setted at height of container object (Default value is the height of container object)
+ *  limitx {Double} (Optional) - 0 - 1 Limit the movement in the X axis (Creates a vertical only stick when limitx = 0)
+ *  limity {Double} (Optional) - 0 - 1 Limit the movement in the Y axis (Creates a horizontal only stick when limity = 0)
+ *  axesX int (optional default 0) : joystick array index
+ *  axesY int (optional default 1) : joystick array index
  *  internalFillColor {String} (optional) - Internal color of Stick (Default value is '#00AA00')
  *  internalLineWidth {Int} (optional) - Border width of Stick (Default value is 2)
  *  internalStrokeColor {String}(optional) - Border color of Stick (Default value is '#003300')
  *  externalLineWidth {Int} (optional) - External reference circonference width (Default value is 2)
  *  externalStrokeColor {String} (optional) - External reference circonference color (Default value is '#008000')
  *  autoReturnToCenter {Bool} (optional) - Sets the behavior of the stick, whether or not, it should return to zero position when released (Default value is True and return to zero)
+ *  limitToCircle {Bool} (optional) - Default false - Limit range of diagonal movement to unit circle.
  * @param callback {StickStatus} - 
  */
 var JoyStick = (function(container, parameters, callback)
@@ -77,14 +82,15 @@ var JoyStick = (function(container, parameters, callback)
     var title = (typeof parameters.title === "undefined" ? "joystick" : parameters.title),
         width = (typeof parameters.width === "undefined" ? 0 : parameters.width),
         height = (typeof parameters.height === "undefined" ? 0 : parameters.height),
-        limitX = (typeof parameters.limitX === "undefined" ? 1 : parameters.limitX),
-		limitY = (typeof parameters.limitY === "undefined" ? 1 : parameters.limitY),
+        limitX = (typeof parameters.limitX === "undefined" ? false : parameters.limitX),
+		limitY = (typeof parameters.limitY === "undefined" ? false : parameters.limitY),
 		internalFillColor = (typeof parameters.internalFillColor === "undefined" ? "#00AA00" : parameters.internalFillColor),
         internalLineWidth = (typeof parameters.internalLineWidth === "undefined" ? 2 : parameters.internalLineWidth),
         internalStrokeColor = (typeof parameters.internalStrokeColor === "undefined" ? "#003300" : parameters.internalStrokeColor),
         externalLineWidth = (typeof parameters.externalLineWidth === "undefined" ? 2 : parameters.externalLineWidth),
         externalStrokeColor = (typeof parameters.externalStrokeColor ===  "undefined" ? "#008000" : parameters.externalStrokeColor),
-        autoReturnToCenter = (typeof parameters.autoReturnToCenter === "undefined" ? true : parameters.autoReturnToCenter);
+        autoReturnToCenter = (typeof parameters.autoReturnToCenter === "undefined" ? true : parameters.autoReturnToCenter),
+        limitToCircle = (typeof parameters.limitToCircle === "undefined" ? false : parameters.limitToCircle);
 
     StickStatus.axesX = (typeof parameters.axesX === "undefined" ? 0 : parameters.axesX) ;
 	StickStatus.axesY = (typeof parameters.axesY === "undefined" ? 1 : parameters.axesY) ;       
@@ -95,7 +101,9 @@ var JoyStick = (function(container, parameters, callback)
     
     // Fixing Unable to preventDefault inside passive event listener due to target being treated as passive in Chrome [Thanks to https://github.com/artisticfox8 for this suggestion]
     objContainer.style.touchAction = "none";
-
+    if (limitX && limitY) {
+        console.error("Please don't limit joystick in both X and Y, that makes no sense! and it won't do anything");
+    }
     var canvas = document.createElement("canvas");
     canvas.id = title;
     if(width === 0) { width = objContainer.clientWidth; }
@@ -149,18 +157,18 @@ var JoyStick = (function(container, parameters, callback)
     function drawExternal()
     {
         context.beginPath();
-		if (limitX == 1 && limitY == 1) {
+		if (limitX == false && limitY == false) {
 			context.arc(centerX, centerY, externalRadius, 0, circumference, false);
 		}
-		else if (limitX == 0 && limitY == 1) {
+		else if (limitX == true && limitY == false) {
 			movedX = centerX;
 			// Only Y movements.. so arcs at top and bottom
-			context.arc(centerX, externalRadius-internalRadius, internalRadius, -Math.PI/2, Math.PI/2, false);
-			//context.lineTo(internalRadius/2,externalRadius-internalRadius);
-			//context.arc(centerX, -(externalRadius-internalRadius), internalRadius, Math.PI/2, -Math.PI/2, false);
-			//context.lineTo(-internalRadius/2,-externalRadius-internalRadius);
+			context.arc(centerX, centerY+externalRadius-internalRadius, internalRadius, 0, Math.PI, false);
+			context.lineTo(centerY-internalRadius,centerX-externalRadius+internalRadius);
+			context.arc(centerX, centerY-externalRadius+internalRadius, internalRadius, Math.PI, 0, false);
+			context.lineTo(centerY+internalRadius,centerX+externalRadius-internalRadius);
 		}
-		else if (limitX == 1 && limitY == 0) {
+		else if (limitX == false && limitY == true) {
 			movedY = centerY;
 			// Only X movements.. so arcs at left and right
 			context.arc(centerX-externalRadius+internalRadius, centerY, internalRadius, Math.PI/2, -Math.PI/2, false);
@@ -168,6 +176,11 @@ var JoyStick = (function(container, parameters, callback)
 			context.arc(centerX+externalRadius-internalRadius, centerY, internalRadius, -Math.PI/2, Math.PI/2, false);
 			context.lineTo(centerX-externalRadius+internalRadius,centerY+internalRadius);
 		}
+        else {
+            movedY = centerY;
+            movedX = centerX;
+            context.arc(centerX, centerY, internalRadius, 0, circumference, false);
+        }
 		context.lineWidth = externalLineWidth;
 		context.strokeStyle = externalStrokeColor;
 		context.stroke();
@@ -179,10 +192,18 @@ var JoyStick = (function(container, parameters, callback)
     function drawInternal()
     {
         context.beginPath();
-        if(movedX<internalRadius) { movedX=maxMoveStick; }
-        if((movedX+internalRadius) > canvas.width) { movedX = canvas.width-(maxMoveStick); }
-        if(movedY<internalRadius) { movedY=maxMoveStick; }
-        if((movedY+internalRadius) > canvas.height) { movedY = canvas.height-(maxMoveStick); }
+        if (limitToCircle) {
+            var scalingFactor = Math.sqrt(Math.pow(internalRadius*1.12, 2) / (Math.pow(movedX - centerX, 2) + Math.pow(movedY - centerY, 2)));
+            if (scalingFactor < 1) {
+                movedX = centerX + (movedX - centerX) * scalingFactor;
+                movedY = centerY + (movedY - centerY) * scalingFactor;
+            }
+        } else {
+            if(movedX<internalRadius) { movedX=maxMoveStick; }
+            if((movedX+internalRadius) > canvas.width) { movedX = canvas.width-(maxMoveStick); }
+            if(movedY<internalRadius) { movedY=maxMoveStick; }
+            if((movedY+internalRadius) > canvas.height) { movedY = canvas.height-(maxMoveStick); }
+        }
         context.arc(movedX, movedY, internalRadius, 0, circumference, false);
         // create radial gradient
         var grd = context.createRadialGradient(centerX, centerY, 5, centerX, centerY, 200);
@@ -409,21 +430,35 @@ var JoyStick = (function(container, parameters, callback)
     };
 
     /**
-     * @desc Normalizzed value of X move of stick
-     * @return Integer from -100 to +100
+     * @desc Normalised value of X move of stick
+     * @return Double from -1 to +1
      */
     this.GetX = function ()
     {
-        return (100*((movedX - centerX)/maxMoveStick)).toFixed();
+        x = ((movedX - centerX)/maxMoveStick);
+        if (x > 1) {
+            return 1;
+        }
+        if (x < -1) {
+            return -1;
+        }
+        return x;
     };
 
     /**
-     * @desc Normalizzed value of Y move of stick
-     * @return Integer from -100 to +100
+     * @desc Normalised value of Y move of stick
+     * @return Integer from -1 to +1
      */
     this.GetY = function ()
     {
-        return ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
+        var y = (((movedY - centerY)/maxMoveStick))*-1;
+        if (y > 1) {
+            return 1;
+        }
+        if (y < -1) {
+            return -1;
+        }
+        return y;
     };
 
     /**

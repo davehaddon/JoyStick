@@ -130,7 +130,7 @@ setInterval(function(){ joy1X.value=Joy1.GetX(); }, 50);
 setInterval(function(){ joy1Y.value=Joy1.GetY(); }, 50);
 */
 // Create JoyStick object into the DIV 'joy1Div'
-var Joy1 = new JoyStick('joy1Div', {}, function(stickData) {
+var Joy1 = new JoyStick('joy1Div', {"limitToCircle":true}, function(stickData) {
     joy1IinputPosX.value = stickData.xPosition;
     joy1InputPosY.value = stickData.yPosition;
     joy1Direzione.value = stickData.cardinalDirection;
@@ -154,7 +154,7 @@ setInterval(function(){ joy2Direzione.value=Joy2.GetDir(); }, 50);
 setInterval(function(){ joy2X.value=Joy2.GetX(); }, 50);
 setInterval(function(){ joy2Y.value=Joy2.GetY(); }, 50);
 
-var joy3Param = { "title": "joystick3" , limitX: 0};
+var joy3Param = { "title": "joystick3" , limitX: 0.5};
 var Joy3 = new JoyStick('joy3Div', joy3Param);
 
 var joy3IinputPosX = document.getElementById("joy3PosizioneX");
