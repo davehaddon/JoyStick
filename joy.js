@@ -63,10 +63,10 @@ let StickStatus =
  *  title {String} (optional) - The ID of canvas (Default value is 'joystick')
  *  width {Int} (optional) - The width of canvas, if not specified is setted at width of container object (Default value is the width of container object)
  *  height {Int} (optional) - The height of canvas, if not specified is setted at height of container object (Default value is the height of container object)
- *  limitx {Double} (Optional) - 0 - 1 Limit the movement in the X axis (Creates a vertical only stick when limitx = 0)
- *  limity {Double} (Optional) - 0 - 1 Limit the movement in the Y axis (Creates a horizontal only stick when limity = 0)
- *  axesX int (optional default 0) : joystick array index
- *  axesY int (optional default 1) : joystick array index
+ *  limitx {Bool} (Optional) - default false. Set to True to Limit the movement in the X axis (Creates a vertical only stick)
+ *  limity {Bool} (Optional) - defatul false. Limit the movement in the Y axis (Creates a horizontal only stick)
+ *  axesX int (optional default 0) : joystick array index for ROS joystick topic
+ *  axesY int (optional default 1) : joystick array index for ROS joystick topic
  *  internalFillColor {String} (optional) - Internal color of Stick (Default value is '#00AA00')
  *  internalLineWidth {Int} (optional) - Border width of Stick (Default value is 2)
  *  internalStrokeColor {String}(optional) - Border color of Stick (Default value is '#003300')
@@ -74,7 +74,7 @@ let StickStatus =
  *  externalStrokeColor {String} (optional) - External reference circonference color (Default value is '#008000')
  *  autoReturnToCenter {Bool} (optional) - Sets the behavior of the stick, whether or not, it should return to zero position when released (Default value is True and return to zero)
  *  limitToCircle {Bool} (optional) - Default false - Limit range of diagonal movement to unit circle.
- * @param callback {StickStatus} - 
+ * @param callback {StickStatus} - This can be a function OR an Object containing a callback function that can accept multiple sticks
  */
 var JoyStick = (function(container, parameters, callback)
 {
@@ -231,7 +231,15 @@ var JoyStick = (function(container, parameters, callback)
         if (StickStatus.y > 1) { StickStatus.y = 1; } 
         if (StickStatus.y < -1) { StickStatus.y = -1; } 
         StickStatus.cardinalDirection = getCardinalDirection();
-        callback(StickStatus);
+        if (callback instanceof Function) {
+            callback(StickStatus);
+        }
+        else if (callback.callback instanceof Function) {
+            callback.callback(StickStatus, callback);
+        }
+        else {
+            return StickStatus;
+        }
     } 
 
     /**
