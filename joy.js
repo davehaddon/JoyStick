@@ -46,14 +46,7 @@
  * SOFTWARE.
  */
 
-let StickStatus =
-{
-    x: 0,  // Float: -1 <> 1
-    y: 0,  // Float: -1 <> 1
-    cardinalDirection: "C",
-    axesX: 0,
-    axesY: 1
-};
+
 
 /**
  * @desc Principal object that draw a joystick, you only need to initialize the object and suggest the HTML container
@@ -92,8 +85,14 @@ var JoyStick = (function(container, parameters, callback)
         autoReturnToCenter = (typeof parameters.autoReturnToCenter === "undefined" ? true : parameters.autoReturnToCenter),
         limitToCircle = (typeof parameters.limitToCircle === "undefined" ? false : parameters.limitToCircle);
 
-    StickStatus.axesX = (typeof parameters.axesX === "undefined" ? 0 : parameters.axesX) ;
-	StickStatus.axesY = (typeof parameters.axesY === "undefined" ? 1 : parameters.axesY) ;       
+    var StickStatus =
+    {
+        x: 0,  // Float: -1 <> 1
+        y: 0,  // Float: -1 <> 1
+        cardinalDirection: "C",
+        axesX: (typeof parameters.axesX === "undefined" ? 0 : parameters.axesX),
+        axesY: (typeof parameters.axesY === "undefined" ? 1 : parameters.axesY) 
+    };
     callback = callback || function(StickStatus) {};
 
     // Create Canvas element and add it in the Container object
