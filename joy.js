@@ -64,7 +64,7 @@ let StickStatus =
  *  width {Int} (optional) - The width of canvas, if not specified is setted at width of container object (Default value is the width of container object)
  *  height {Int} (optional) - The height of canvas, if not specified is setted at height of container object (Default value is the height of container object)
  *  limitx {Bool} (Optional) - default false. Set to True to Limit the movement in the X axis (Creates a vertical only stick)
- *  limity {Bool} (Optional) - defatul false. Limit the movement in the Y axis (Creates a horizontal only stick)
+ *  limity {Bool} (Optional) - default false. Limit the movement in the Y axis (Creates a horizontal only stick)
  *  axesX int (optional default 0) : joystick array index for ROS joystick topic
  *  axesY int (optional default 1) : joystick array index for ROS joystick topic
  *  internalFillColor {String} (optional) - Internal color of Stick (Default value is '#00AA00')

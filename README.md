@@ -1,16 +1,16 @@
-# JoyStick 2 - The new version
-
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a8b6ea1475c54ae9896e849e356dfe1d)](https://www.codacy.com/app/bobboteck/JoyStick?utm_source=github.com&utm_medium=referral&utm_content=bobboteck/JoyStick&utm_campaign=badger) ![VanillaJS](https://img.shields.io/badge/Vanilla-JS-yellow "VanillaJS") ![GitHub release (latest by date)](https://img.shields.io/github/v/release/bobboteck/joystick) ![GitHub file size in bytes](https://img.shields.io/github/size/bobboteck/joystick/joy.min.js)
-[![GitHub stars](https://img.shields.io/github/stars/bobboteck/JoyStick)](https://github.com/bobboteck/JoyStick/stargazers) [![GitHub forks](https://img.shields.io/github/forks/bobboteck/JoyStick)](https://github.com/bobboteck/JoyStick/network) ![GitHub All Releases](https://img.shields.io/github/downloads/bobboteck/joystick/total) ![npm](https://img.shields.io/npm/v/html5-joystick) ![npm](https://img.shields.io/npm/dw/html5-joystick)
+# JoyStick 2.0.1 - The new (ROS) version
 
 ## About
 
-**Author: [Roberto D'Amico](http://bobboteck.github.io)**
+**Original Author: [Roberto D'Amico](http://bobboteck.github.io)**
 
 A simple **JoyStick** for web application that use HTML5, Canvas and JavaScript.
 You can simply add a JoyStick in your HTML5 page, base configuration is ready for use it.
 The JoyStick can be used either on touch devices, or on devices that use mouse, touchpads or similar pointing systems.
 Developed for Web Remote Control of Robot, the JoyStick can be used for all other scope.
+
+Added Options to limit the X or Y axes to create single axis joysticks
+
 
 > **Note:** the code not use JQuery, or other framework, but only pure Vanilla JavaScript.
 
@@ -18,19 +18,21 @@ Developed for Web Remote Control of Robot, the JoyStick can be used for all othe
 
 > **Note:** the new version is fully compatible with the previous ones!
 
-By using the new callback function, **introduced with version 2.0.0 of the library**, you can use the properties of the object, referenced in the callback function, to be able to access the same information that in previous versions of the library, was available only through calls to specific methods.
+By using the new callback function you can pass a function OR an Object (containing  a 'callback' function).
+
+You can use the properties of the object in the callback to be able to access the same information that in previous versions of the library, was available only through calls to specific methods.
+
 The available properties are:
 
-- **xPosition** and **yPosition**: they provide the position of the cursor relative to the Canvas that contains it and to its dimensions. As it happens for the methods: GetPosX and GetPosY
 - **cardinalDirection**: it provide the direction of the cursor as a string that indicates the cardinal points where this is oriented (N, NE, E, SE, S, SW, W, NW and C when it is placed in the center). As it happens for the method: GetDir
-- **x** and **y**: they provide a value between -100 to +100 ***independently*** of size of the Canvas. As it happens for the methods: GetX and GetY
+- **x** and **y**: they provide a double value between -1 to +1 ***independently*** of size of the Canvas. As it happens for the methods: GetX and GetY
 
 The old methods, the only ones available up to version 1.6.0, can still be used with the new version. Using them you can know the position of the Stick is located.
 The methods available are:
 
 - **GetPosX()** and **GetPosY()**: which return the position of the cursor relative to the Canvas that contains it and to its dimensions
 - **GetDir()**: which returns the direction of the cursor as a string that indicates the cardinal points where this is oriented (N, NE, E, SE, S, SW, W, NW and C when it is placed in the center)
-- **GetX()** and **GetY()**: which return a value between -100 to +100 ***independently*** of size of the Canvas.
+- **GetX()** and **GetY()**: which return a value between -1 to +1 ***independently*** of size of the Canvas.
 
 ## How to use it
 
@@ -92,12 +94,18 @@ All configuration parameters are optional, must be passed in JSON format, theref
 * **title {String} (optional)** - The ID of canvas (Default value is 'joystick')
 * **width {Int} (optional)** - The width of canvas, if not specified is setted at width of container object (Default value is the width of container object)
 * **height {Int} (optional)** - The height of canvas, if not specified is setted at height of container object (Default value is the height of container object)
+* **limitX {Bool} (Optional)** : default false. Set to True to Limit the movement in the X axis (Creates a vertical only stick)
+* **limitY {Bool} (Optional)** : default false. Limit the movement in the Y axis (Creates a horizontal only stick)
+* **axesX int (optional default 0)** : joystick array index for ROS joystick topic
+* **axesY int (optional default 1)** : joystick array index for ROS joystick topic
 * **internalFillColor {String} (optional)** - Internal color of Stick (Default value is '#00AA00')
 * **internalLineWidth {Int} (optional)** - Border width of Stick (Default value is 2)
 * **internalStrokeColor {String}(optional)** - Border color of Stick (Default value is '#003300')
 * **externalLineWidth {Int} (optional)** - External reference circonference width (Default value is 2)
 * **externalStrokeColor {String} (optional)** - External reference circonference color (Default value is '#008000')
-* **autoReturnToCenter {Bool} (optional)** - Sets the behavior of the stick, whether or not, it should return to zero position when released (Default value is True and return to zero)
+* **autoReturnToCenter {Bool} (optional)** - Sets the behavior of the stick, whether or not, it should return to zero position 
+when released (Default value is True and return to zero)
+* **limitToCircle {Bool} (optional)** - Default false - Limit range of diagonal movement to unit circle.
 
 ## Tips & Tricks
 
