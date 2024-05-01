@@ -6,6 +6,7 @@
  *
  * Modification History:
  * Date         Version     Modified By     Description
+ * 2024-05-01   2.0.1       David Haddon    Create single callback, x any are -1 to 1 floats instead of -100 to 100 int.
  * 2021-12-21   2.0.0       Roberto D'Amico New version of the project that integrates the callback functions, while 
  *                                          maintaining compatibility with previous versions. Fixed Issue #27 too, 
  *                                          thanks to @artisticfox8 for the suggestion.
@@ -47,11 +48,11 @@
 
 let StickStatus =
 {
-    xPosition: 0,
-    yPosition: 0,
-    x: 0,
-    y: 0,
-    cardinalDirection: "C"
+    x: 0,  // Float: -1 <> 1
+    y: 0,  // Float: -1 <> 1
+    cardinalDirection: "C",
+    axesX: 0,
+    axesY: 1
 };
 
 /**
@@ -76,13 +77,17 @@ var JoyStick = (function(container, parameters, callback)
     var title = (typeof parameters.title === "undefined" ? "joystick" : parameters.title),
         width = (typeof parameters.width === "undefined" ? 0 : parameters.width),
         height = (typeof parameters.height === "undefined" ? 0 : parameters.height),
-        internalFillColor = (typeof parameters.internalFillColor === "undefined" ? "#00AA00" : parameters.internalFillColor),
+        limitX = (typeof parameters.limitX === "undefined" ? 1 : parameters.limitX),
+		limitY = (typeof parameters.limitY === "undefined" ? 1 : parameters.limitY),
+		internalFillColor = (typeof parameters.internalFillColor === "undefined" ? "#00AA00" : parameters.internalFillColor),
         internalLineWidth = (typeof parameters.internalLineWidth === "undefined" ? 2 : parameters.internalLineWidth),
         internalStrokeColor = (typeof parameters.internalStrokeColor === "undefined" ? "#003300" : parameters.internalStrokeColor),
         externalLineWidth = (typeof parameters.externalLineWidth === "undefined" ? 2 : parameters.externalLineWidth),
         externalStrokeColor = (typeof parameters.externalStrokeColor ===  "undefined" ? "#008000" : parameters.externalStrokeColor),
         autoReturnToCenter = (typeof parameters.autoReturnToCenter === "undefined" ? true : parameters.autoReturnToCenter);
 
+    StickStatus.axesX = (typeof parameters.axesX === "undefined" ? 0 : parameters.axesX) ;
+	StickStatus.axesY = (typeof parameters.axesY === "undefined" ? 1 : parameters.axesY) ;       
     callback = callback || function(StickStatus) {};
 
     // Create Canvas element and add it in the Container object
@@ -121,12 +126,14 @@ var JoyStick = (function(container, parameters, callback)
         canvas.addEventListener("touchstart", onTouchStart, false);
         document.addEventListener("touchmove", onTouchMove, false);
         document.addEventListener("touchend", onTouchEnd, false);
+        objContainer.addEventListener("touchleave", onTouchEnd, false);
     }
     else
     {
         canvas.addEventListener("mousedown", onMouseDown, false);
         document.addEventListener("mousemove", onMouseMove, false);
         document.addEventListener("mouseup", onMouseUp, false);
+        objContainer.addEventListener("mouseleave", onMouseUp, false);
     }
     // Draw the object
     drawExternal();
@@ -142,10 +149,28 @@ var JoyStick = (function(container, parameters, callback)
     function drawExternal()
     {
         context.beginPath();
-        context.arc(centerX, centerY, externalRadius, 0, circumference, false);
-        context.lineWidth = externalLineWidth;
-        context.strokeStyle = externalStrokeColor;
-        context.stroke();
+		if (limitX == 1 && limitY == 1) {
+			context.arc(centerX, centerY, externalRadius, 0, circumference, false);
+		}
+		else if (limitX == 0 && limitY == 1) {
+			movedX = centerX;
+			// Only Y movements.. so arcs at top and bottom
+			context.arc(centerX, externalRadius-internalRadius, internalRadius, -Math.PI/2, Math.PI/2, false);
+			//context.lineTo(internalRadius/2,externalRadius-internalRadius);
+			//context.arc(centerX, -(externalRadius-internalRadius), internalRadius, Math.PI/2, -Math.PI/2, false);
+			//context.lineTo(-internalRadius/2,-externalRadius-internalRadius);
+		}
+		else if (limitX == 1 && limitY == 0) {
+			movedY = centerY;
+			// Only X movements.. so arcs at left and right
+			context.arc(centerX-externalRadius+internalRadius, centerY, internalRadius, Math.PI/2, -Math.PI/2, false);
+			context.lineTo(centerX+externalRadius-internalRadius,centerY-internalRadius);
+			context.arc(centerX+externalRadius-internalRadius, centerY, internalRadius, -Math.PI/2, Math.PI/2, false);
+			context.lineTo(centerX-externalRadius+internalRadius,centerY+internalRadius);
+		}
+		context.lineWidth = externalLineWidth;
+		context.strokeStyle = externalStrokeColor;
+		context.stroke();
     }
 
     /**
@@ -171,6 +196,22 @@ var JoyStick = (function(container, parameters, callback)
         context.strokeStyle = internalStrokeColor;
         context.stroke();
     }
+
+    /** 
+     * @desc Do any corrections and send the Callback
+     */
+    function doCallback() 
+    {
+        // Set attribute of StickStatus
+        StickStatus.x = (movedX - centerX)/maxMoveStick;
+        StickStatus.y = (movedY - centerY)/maxMoveStick*-1;
+        if (StickStatus.x > 1) { StickStatus.x = 1; } 
+        if (StickStatus.x < -1) { StickStatus.x = -1; } 
+        if (StickStatus.y > 1) { StickStatus.y = 1; } 
+        if (StickStatus.y < -1) { StickStatus.y = -1; } 
+        StickStatus.cardinalDirection = getCardinalDirection();
+        callback(StickStatus);
+    } 
 
     /**
      * @desc Events for manage touch
@@ -204,14 +245,8 @@ var JoyStick = (function(container, parameters, callback)
             // Redraw object
             drawExternal();
             drawInternal();
-
-            // Set attribute of callback
-            StickStatus.xPosition = movedX;
-            StickStatus.yPosition = movedY;
-            StickStatus.x = (100*((movedX - centerX)/maxMoveStick)).toFixed();
-            StickStatus.y = ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
-            StickStatus.cardinalDirection = getCardinalDirection();
-            callback(StickStatus);
+            doCallback();
+           
         }
     }
 
@@ -231,14 +266,7 @@ var JoyStick = (function(container, parameters, callback)
         // Redraw object
         drawExternal();
         drawInternal();
-
-        // Set attribute of callback
-        StickStatus.xPosition = movedX;
-        StickStatus.yPosition = movedY;
-        StickStatus.x = (100*((movedX - centerX)/maxMoveStick)).toFixed();
-        StickStatus.y = ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
-        StickStatus.cardinalDirection = getCardinalDirection();
-        callback(StickStatus);
+        doCallback();
     }
 
     /**
@@ -272,14 +300,8 @@ var JoyStick = (function(container, parameters, callback)
             // Redraw object
             drawExternal();
             drawInternal();
-
-            // Set attribute of callback
-            StickStatus.xPosition = movedX;
-            StickStatus.yPosition = movedY;
-            StickStatus.x = (100*((movedX - centerX)/maxMoveStick)).toFixed();
-            StickStatus.y = ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
-            StickStatus.cardinalDirection = getCardinalDirection();
-            callback(StickStatus);
+            doCallback();
+            
         }
     }
 
@@ -297,14 +319,8 @@ var JoyStick = (function(container, parameters, callback)
         // Redraw object
         drawExternal();
         drawInternal();
-
-        // Set attribute of callback
-        StickStatus.xPosition = movedX;
-        StickStatus.yPosition = movedY;
-        StickStatus.x = (100*((movedX - centerX)/maxMoveStick)).toFixed();
-        StickStatus.y = ((100*((movedY - centerY)/maxMoveStick))*-1).toFixed();
-        StickStatus.cardinalDirection = getCardinalDirection();
-        callback(StickStatus);
+        doCallback();
+        
     }
 
     function getCardinalDirection()
